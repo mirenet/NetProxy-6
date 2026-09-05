@@ -54,7 +54,7 @@ class ProxyService : Service() {
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("NetProxy Running..")
             .setContentText("Server je aktivan na portu $port")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(android.R.drawable.ic_menu_info_details)
             .setLargeIcon(largeIconBitmap)
             .setContentIntent(pendingIntent)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Turn Off", stopPendingIntent)
