@@ -48,7 +48,9 @@ class ProxyService : Service() {
             this, 0, stopIntent,
             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-
+       
+        val largeIconBitmap = BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
+       
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("NetProxy Running..")
             .setContentText("Server je aktivan na portu $port")
