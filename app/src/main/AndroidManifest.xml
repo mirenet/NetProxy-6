@@ -3,6 +3,9 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="com.netproxy.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
 
     <application
@@ -22,19 +25,24 @@
         </activity>
 
         <activity 
-        android:name=".TransparentProxyActivity" 
-        android:exported="true"
-        android:theme="@style/Theme.NetProxy.Transparent"
-        android:noHistory="true"
-        android:excludeFromRecents="true"
-        android:taskAffinity="">
-        <intent-filter>
-        <action android:name="android.intent.action.VIEW" />
-        <category android:name="android.intent.category.DEFAULT" />
-        <category android:name="android.intent.category.BROWSABLE" />
-        <data android:scheme="netproxy" android:host="action" />
-    </intent-filter>
-</activity>
+            android:name=".TransparentProxyActivity" 
+            android:exported="true"
+            android:theme="@style/Theme.NetProxy.Transparent"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity="">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="netproxy" android:host="action" />
+            </intent-filter>
+        </activity>
+
+        <service 
+            android:name=".ProxyService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <provider android:name="androidx.startup.InitializationProvider" android:exported="false" android:authorities="com.netproxy.app.androidx-startup">
             <meta-data android:name="androidx.emoji2.text.EmojiCompatInitializer" android:value="androidx.startup" />
