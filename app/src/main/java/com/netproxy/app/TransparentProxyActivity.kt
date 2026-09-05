@@ -1,6 +1,7 @@
 package com.netproxy.app
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 
@@ -21,23 +22,18 @@ class TransparentProxyActivity : AppCompatActivity() {
         if (Intent.ACTION_VIEW == incomingIntent.action) {
             val uri = incomingIntent.data
             if (uri != null && uri.scheme == "netproxy") {
-                var startParam = uri.getQueryParameter("start")
-
-                if (startParam == null) {
-                    val hostOrPath = uri.host ?: uri.schemeSpecificPart
-                    if (hostOrPath != null && hostOrPath.contains("start=")) {
-                        val parts = hostOrPath.replace("//", "").split("=")
-                        if (parts.size > 1) {
-                            startParam = parts[1]
-                        }
-                    }
-                }
-
-                val minutes = startParam?.toIntOrNull() ?: 5
                 val port = 8080
                 val password = "7777"
 
-                MainActivity.startProxyServerGlobal(this, port, password, minutes)
+                val serviceIntent = Intent(this, ProxyService::class.java).apply {
+                    putExtra("PORT", port)
+                    putExtra("PASSWORD", password)
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent)
+                } else {
+                    startService(serviceIntent)
+                }
             }
         }
         finish()
