@@ -3,6 +3,7 @@ package com.netproxy.app
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -12,56 +13,6 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
-
-    companion object {
-        var proxyServer: LocalProxyServer? = null
-        var isServerRunning: Boolean = false
-        var activePort: Int = 8080
-        private val handler = Handler(Looper.getMainLooper())
-        private var shutdownRunnable: Runnable? = null
-
-        fun stopProxyServerGlobal() {
-            try {
-                proxyServer?.stop()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            proxyServer = null
-            isServerRunning = false
-            shutdownRunnable?.let { handler.removeCallbacks(it) }
-            shutdownRunnable = null
-        }
-
-        fun startProxyServerGlobal(context: android.content.Context, port: Int, password: String, minutes: Int, onStatusChanged: ((Boolean, Int) -> Unit)? = null) {
-            try {
-                if (proxyServer != null) {
-                    stopProxyServerGlobal()
-                }
-
-                proxyServer = LocalProxyServer(port, password, context.applicationContext)
-                proxyServer?.start()
-                isServerRunning = true
-                activePort = port
-                onStatusChanged?.invoke(true, port)
-
-                shutdownRunnable?.let { handler.removeCallbacks(it) }
-
-                if (minutes > 0) {
-                    val millis = minutes * 60 * 1000L
-                    shutdownRunnable = Runnable {
-                        stopProxyServerGlobal()
-                        onStatusChanged?.invoke(false, port)
-                    }
-                    handler.postDelayed(shutdownRunnable!!, millis)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                proxyServer = null
-                isServerRunning = false
-                onStatusChanged?.invoke(false, port)
-            }
-        }
-    }
 
     private lateinit var etPort: EditText
     private lateinit var etPassword: EditText
@@ -79,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         btnTurnOff = findViewById(R.id.btnTurnOff)
         tvStatus = findViewById(R.id.tvStatus)
 
-        updateStatusUI(isServerRunning, activePort)
+        updateStatusUI(ProxyService.isServerRunning, ProxyService.activePort)
 
         btnTurnOn.setOnClickListener {
             startProxyServerManual()
@@ -102,7 +53,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        updateStatusUI(isServerRunning, activePort)
+        updateStatusUI(ProxyService.isServerRunning, ProxyService.activePort)
     }
 
     private fun handleNetProxyIntent(intent: Intent) {
@@ -121,16 +72,22 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                val minutes = startParam?.toIntOrNull() ?: 5
-
                 val portStr = etPort.text.toString().trim()
                 val passwordStr = etPassword.text.toString().trim()
                 val port = if (portStr.isNotEmpty()) portStr.toInt() else 8080
                 val password = if (passwordStr.isNotEmpty()) passwordStr else "7777"
 
-                startProxyServerGlobal(this, port, password, minutes) { running, p ->
-                    runOnUiThread { updateStatusUI(running, p) }
+                val serviceIntent = Intent(this, ProxyService::class.java).apply {
+                    putExtra("PORT", port)
+                    putExtra("PASSWORD", password)
                 }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent)
+                } else {
+                    startService(serviceIntent)
+                }
+
+                updateStatusUI(true, port)
 
                 Handler(Looper.getMainLooper()).postDelayed({
                     try {
@@ -150,14 +107,21 @@ class MainActivity : AppCompatActivity() {
         val port = if (portStr.isNotEmpty()) portStr.toInt() else 8080
         val passwordFinal = if (password.isNotEmpty()) password else "7777"
 
-        startProxyServerGlobal(this, port, passwordFinal, 0) { running, p ->
-            runOnUiThread { updateStatusUI(running, p) }
+        val serviceIntent = Intent(this, ProxyService::class.java).apply {
+            putExtra("PORT", port)
+            putExtra("PASSWORD", passwordFinal)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent)
+        } else {
+            startService(serviceIntent)
         }
         updateStatusUI(true, port)
     }
 
     private fun stopProxyServerManual() {
-        stopProxyServerGlobal()
+        val serviceIntent = Intent(this, ProxyService::class.java)
+        stopService(serviceIntent)
         updateStatusUI(false)
     }
 
